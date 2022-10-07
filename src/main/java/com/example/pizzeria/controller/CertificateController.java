@@ -29,17 +29,35 @@ public class CertificateController {
 
     @GetMapping
     public String getCertPage(@AuthenticationPrincipal UserEntity user, Model model) {
-        return  null;
+        val received = user.getDescReceivedCertififcates();
+        val donated = user.getDescDonatedCertificates();
+        model.addAttribute("received", Certificate.toModel(received));
+        model.addAttribute("donated", Certificate.toModel(donated));
+        return "certificates";
     }
     @GetMapping("/addd")
     public String getAddCertPage(Model model, RedirectAttributes attrs) {
-        return  null;
-
+        val newCert = new CertificateEntity();
+        val newUser = new UserEntity();
+        val newUserFromAttr = model.getAttribute("newUser");
+        val users = userService.getAll();
+        val usersFromAttr = model.getAttribute("users");
+        model.addAttribute("newCert", newCert);
+        model.addAttribute("users", usersFromAttr == null ? User.toModel(users) : usersFromAttr);
+        model.addAttribute("newUser", newUserFromAttr == null ? newUser : newUserFromAttr);
+        return "addCert";
     }
     @PostMapping("/addd")
     public String updateAddCertPage(Model model, UserEntity user, RedirectAttributes attrs) {
-        return  null;
-
+        UserEntity newUser = UserEntity.builder()
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .username(user.getUsername())
+                .build();
+        List<UserEntity> users = userService.filterByFields(user);
+        attrs.addFlashAttribute("users", User.toModel(users));
+        attrs.addFlashAttribute("newUser", newUser);
+        return "redirect:/certificate/add";
     }
 
     @PostMapping("/{toUserId}/add")
@@ -49,7 +67,14 @@ public class CertificateController {
             CertificateEntity certInfo,
             @PathVariable UUID toUserId
     ) {
-        return  null;
-
+        try {
+            certificateService.create(currentUser, toUserId, certInfo);
+            attrs.addFlashAttribute("message", "Сертификат подарен");
+            return "redirect:/certificate";
+        } catch(Exception e) {
+            attrs.addFlashAttribute("errorTitle", "Возникла ошибка");
+            attrs.addFlashAttribute("errorMessage", e.getMessage());
+            return "redirect:/error";
+        }
     }
 }
