@@ -32,33 +32,63 @@ public class GoodsController {
 
     @GetMapping
     public String getGoodsPage(Model model, RedirectAttributes attrs) {
-        return  null;
-
+        val filterDto = new FilterGoodsDTO();
+        List<GoodsEntity> allGoods = goodsService.getAllGoods(filterDto);
+        val filterDtoFromAttr = model.getAttribute("filterDto");
+        val goodsFromAttr = model.getAttribute("goods");
+        model.addAttribute("goods", goodsFromAttr == null ? Goods.toModel(allGoods) : goodsFromAttr);
+        model.addAttribute("filterDto", filterDtoFromAttr == null ? filterDto : filterDtoFromAttr);
+        model.addAttribute("discountDto", new SetDiscountDto());
+        model.addAttribute("newGoodsItem", new GoodsEntity());
+        return "goods";
     }
     @PostMapping
     public String filterGoodsPage(RedirectAttributes attrs, FilterGoodsDTO dto) {
-        return  null;
-
+        List<GoodsEntity> allGoods = goodsService.getAllGoods(dto);
+        attrs.addFlashAttribute("goods", Goods.toModel(allGoods));
+        attrs.addFlashAttribute("filterDto", dto);
+        return "redirect:/goods";
     }
 
     @PreAuthorize("hasAuthority('ADMIN')")
     @PostMapping("/{goodsId}/discount")
     public String editGoodsDiscount(RedirectAttributes attrs, SetDiscountDto dto, @PathVariable UUID goodsId, Model model) {
-        return  null;
-
+        try {
+            goodsService.editDiscount(goodsId, dto.getDiscount());
+            attrs.addFlashAttribute("message", "Изменена скидка");
+            return "redirect:/goods";
+        } catch (Exception e) {
+            attrs.addFlashAttribute("errorTitle", "Ошибка при изменении скидки");
+            attrs.addFlashAttribute("errorMessage", e.getMessage());
+            return "redirect:/error";
+        }
     }
 
     @PreAuthorize("hasAuthority('ADMIN')")
     @PostMapping("/{goodsId}/edit")
     public String editGoodsInfo(RedirectAttributes attrs, GoodsEntity goodsItem, @PathVariable UUID goodsId, Model model) {
-        return  null;
-
+        try {
+            goodsService.editGoodsInfo(goodsId, goodsItem);
+            attrs.addFlashAttribute("message", "Товар изменен");
+            return "redirect:/goods";
+        } catch (Exception e) {
+            attrs.addFlashAttribute("errorTitle", "Ошибка при изменении товара");
+            attrs.addFlashAttribute("errorMessage", e.getMessage());
+            return "redirect:/error";
+        }
     }
 
     @PreAuthorize("hasAuthority('ADMIN')")
     @PostMapping("/create")
     public String createGoods(RedirectAttributes attrs, GoodsEntity goodsItem, Model model) {
-        return  null;
-
+        try {
+            goodsService.createGoodsItem(goodsItem);
+            attrs.addFlashAttribute("message", "Товар создан");
+            return "redirect:/goods";
+        } catch (Exception e) {
+            attrs.addFlashAttribute("errorTitle", "Ошибка при создании товара");
+            attrs.addFlashAttribute("errorMessage", e.getMessage());
+            return "redirect:/error";
+        }
     }
 }
