@@ -22,15 +22,23 @@ public class UserController {
 
     @GetMapping
     public String getAll(Model model) {
-        return  null;
-
+        val users = User.toModel(userService.getAll());
+        model.addAttribute("users", users);
+        return "home";
     }
 
     @PostMapping
     @PreAuthorize("hasAuthority('ADMIN')")
     Object add(UserEntity userEntity, Model model, RedirectAttributes redirectAttributes) {
-        return  null;
-
+        try {
+            userService.addUser(userEntity);
+            model.addAttribute("message", "Пользователь добавлен");
+            return "redirect:/home";
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorTitle", "Пользователь не добавлен");
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            return "redirect:/error";
+        }
     }
 
 
